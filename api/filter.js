@@ -16,40 +16,36 @@ export default async function handler(req, res) {
     return res.status(400).json({ filtered: '' });
   }
 
-  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-  if (!GROQ_API_KEY) {
+  if (!GEMINI_API_KEY) {
     return res.status(200).json({ filtered: text });
   }
 
-  const systemPrompt = `You are an AI chat moderator. Analyze the message and detect any offensive, sexual, vulgar, insulting, or inappropriate content in any language (Arabic, English, mixed, coded, decorated, or stuck-together words).
-
-If you detect any bad content, replace only the offensive parts with # symbols matching their exact length. Keep the rest of the message unchanged.
-
-If the message is completely clean, return it exactly as is.
-
-Return ONLY the final filtered text. No explanations.`;
+  const systemPrompt = `You are a strict content moderator for Arabic and English.
+Detect any sexual, vulgar, insulting, or inappropriate words or phrases.
+Replace only the bad parts with # symbols of the exact same length.
+Keep the rest unchanged.
+If clean, return original text.
+Output only the filtered text.`;
 
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: text }
-        ],
-        temperature: 0,
-        max_tokens: 200
+        contents: [{
+          parts: [{
+            text: systemPrompt + "\n\nMessage: " + text
+          }]
+        }]
       })
     });
 
     const data = await response.json();
-    const filtered = data.choices?.[0]?.message?.content?.trim() || text;
+    const filtered = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || text;
 
     return res.status(200).json({ filtered });
   } catch (err) {
