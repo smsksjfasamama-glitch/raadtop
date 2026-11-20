@@ -22,11 +22,20 @@ export default async function handler(req, res) {
     return res.status(200).json({ filtered: text });
   }
 
-  const systemPrompt = `أنت فلتر صارم جداً.
-أي كلمة فيها سب أو إهانة أو كلام جنسي أو بذيء حتى لو قصيرة، استبدلها بـ #.
-أمثلة: زب، طيز، كسمك، خرق، نيك، كلها سب.
-استبدل الكلمة كلها بعلامات # بنفس عدد الحروف.
-رجّع النص النهائي فقط.`;
+  const systemPrompt = `You are a strict chat filter for Arabic and English. Your only job is to censor bad words.
+
+Rules:
+- Detect any swear, insult, sexual word, or bad phrase in Arabic or English, even if written stuck together, with numbers, symbols, or slight changes (like كسميةقحبه, ابو طيز, كسمك, زب, كس, طيز, قحبه, كوس, fuck, shit, bitch, etc.).
+- Replace ONLY the bad word or phrase with # symbols of the exact same length. Keep the rest of the sentence exactly the same.
+- Do not add extra text. Do not explain. Do not refuse. Just return the filtered message.
+- If the whole message is bad, replace everything with #.
+- Examples:
+  - "كسمك" → "####"
+  - "كسميةقحبه" → "##########"
+  - "ابو طيز" → "### ###"
+  - "hello كسمك" → "hello ####"
+
+Return only the filtered text, nothing else.`;
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
