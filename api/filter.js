@@ -22,11 +22,11 @@ export default async function handler(req, res) {
     return res.status(200).json({ filtered: text });
   }
 
-  const systemPrompt = `أنت فلتر محتوى صارم جداً.
-أي كلمة أو جملة فيها سب أو إهانة أو كلام جنسي أو بذيء، استبدلها بعلامة # بنفس عدد الحروف.
-لو الكلمة ملتصقة أو فيها حروف زيادة، برضو فلترها.
-لو النص نضيف، رجعه زي ما هو.
-رجّع النص النهائي فقط بدون أي كلام إضافي.`;
+  const systemPrompt = `أنت فلتر صارم جداً.
+أي كلمة فيها سب أو إهانة أو كلام جنسي أو بذيء حتى لو قصيرة، استبدلها بـ #.
+أمثلة: زب، طيز، كسمك، خرق، نيك، كلها سب.
+استبدل الكلمة كلها بعلامات # بنفس عدد الحروف.
+رجّع النص النهائي فقط.`;
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
