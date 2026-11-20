@@ -16,44 +16,48 @@ export default async function handler(req, res) {
     return res.status(400).json({ filtered: '' });
   }
 
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-  if (!GEMINI_API_KEY) {
+  if (!GROQ_API_KEY) {
     return res.status(200).json({ filtered: text });
   }
 
-  const systemPrompt = `You are a strict chat filter for Arabic and English. Your only job is to censor bad words.
+  const systemPrompt = `You are a strict Arabic and English chat filter. Censor bad words only.
 
 Rules:
-- Detect any swear, insult, sexual word, or bad phrase in Arabic or English, even if written stuck together, with numbers, symbols, or slight changes (like كسميةقحبه, ابو طيز, كسمك, زب, كس, طيز, قحبه, كوس, fuck, shit, bitch, etc.).
-- Replace ONLY the bad word or phrase with # symbols of the exact same length. Keep the rest of the sentence exactly the same.
-- Do not add extra text. Do not explain. Do not refuse. Just return the filtered message.
-- If the whole message is bad, replace everything with #.
+- Find any swear, insult, or sexual word in Arabic or English, even if stuck together, with numbers, symbols, or slightly changed (كسميةقحبه, ابو طيز, كسمك, زب, كس, طيز, قحبه, كوس, fuck, shit, bitch, ass, dick, etc.).
+- Replace ONLY the bad word/phrase with # of the exact same length. Keep everything else exactly the same.
+- Do not add text. Do not explain. Return only the filtered message.
+- If the whole message is bad, replace it all with #.
 - Examples:
-  - "كسمك" → "####"
-  - "كسميةقحبه" → "##########"
-  - "ابو طيز" → "### ###"
-  - "hello كسمك" → "hello ####"
+  "كسمك" → "####"
+  "كسميةقحبه" → "##########"
+  "ابو طيز" → "### ###"
+  "hello كسمك" → "hello ####"
+  "زب طيز" → "## ###"
 
-Return only the filtered text, nothing else.`;
+Return only the filtered text.`;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: systemPrompt + "\n\nالرسالة: " + text
-          }]
-        }]
+        model: "llama-3.1-8b-instant",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: text }
+        ],
+        temperature: 0.1,
+        max_tokens: 200
       })
     });
 
     const data = await response.json();
-    const filtered = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || text;
+    const filtered = data.choices?.[0]?.message?.content?.trim() || text;
 
     return res.status(200).json({ filtered });
   } catch (err) {
