@@ -3,7 +3,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { text, userId, placeId } = req.body || {};
+  // المفتاح السري (حطه في Vercel Environment Variables باسم SECRET_KEY)
+  const SECRET_KEY = process.env.SECRET_KEY;
+  const providedKey = req.headers['x-secret-key'];
+
+  if (!SECRET_KEY || providedKey !== SECRET_KEY) {
+    return res.status(200).json({ filtered: '' }); // يرجع فاضي لو مفيش مفتاح
+  }
+
+  const { text } = req.body || {};
 
   if (!text || typeof text !== 'string') {
     return res.status(400).json({ filtered: '' });
@@ -12,7 +20,7 @@ export default async function handler(req, res) {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
   if (!GROQ_API_KEY) {
-    return res.status(500).json({ filtered: text });
+    return res.status(200).json({ filtered: text });
   }
 
   const systemPrompt = `أنت فلتر شات قوي جداً.
