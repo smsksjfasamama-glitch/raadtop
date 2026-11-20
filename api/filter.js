@@ -3,12 +3,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // المفتاح السري (حطه في Vercel Environment Variables باسم SECRET_KEY)
   const SECRET_KEY = process.env.SECRET_KEY;
   const providedKey = req.headers['x-secret-key'];
 
   if (!SECRET_KEY || providedKey !== SECRET_KEY) {
-    return res.status(200).json({ filtered: '' }); // يرجع فاضي لو مفيش مفتاح
+    return res.status(200).json({ filtered: '' });
   }
 
   const { text } = req.body || {};
@@ -23,11 +22,13 @@ export default async function handler(req, res) {
     return res.status(200).json({ filtered: text });
   }
 
-  const systemPrompt = `أنت فلتر شات قوي جداً.
-مهمتك: استبدل أي كلمة سيئة أو سب أو إساءة بـ # بعدد حروف الكلمة بالضبط.
-لو الكلمة ملزوقة أو فيها زخرفة أو اختصار، استبدلها كلها بـ #.
-لو مفيش كلمات سيئة، ارجع النص كما هو.
-ارجع النص المفلتر فقط بدون أي كلام زيادة.`;
+  const systemPrompt = `You are an AI chat moderator. Analyze the message and detect any offensive, sexual, vulgar, insulting, or inappropriate content in any language (Arabic, English, mixed, coded, decorated, or stuck-together words).
+
+If you detect any bad content, replace only the offensive parts with # symbols matching their exact length. Keep the rest of the message unchanged.
+
+If the message is completely clean, return it exactly as is.
+
+Return ONLY the final filtered text. No explanations.`;
 
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
